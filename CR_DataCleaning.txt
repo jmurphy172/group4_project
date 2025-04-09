@@ -1,0 +1,13 @@
+''' Adding a column to show win/loss
+
+def get_chess_outcome(result):
+    if result == '1-0':
+        return 'White Win'
+    elif result == '0-1':
+        return 'Black Win'
+    elif result in ['1/2-1/2', '0.5-0.5']:
+        return 'Draw'
+    else:
+        return 'Unknown'
+
+df['Outcome'] = df['Result'].apply(get_chess_outcome)
