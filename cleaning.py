@@ -1,145 +1,112 @@
-from main.load_data import Load_data
+import main.load_data as ld
 
 import pandas as pd
 
-class Cleaning:
+import pandas as pd
+import main.load_data as ld
 
-    def load_raw_data():
-        raw_data = Load_data.load_raw_data()
-        return raw_data
 
-    def drop_duplicates(df):
-        # Drop duplicates based on all columns
-        deduplicated = df.drop_duplicates()
+def load_raw_data():
+    return ld.load_raw_data()
 
-        # Drop duplicates based on the "White" column
-        deduplicated = deduplicated.drop_duplicates(subset=["White"])
-        
-        """
-        This reduced the number of rows from 121332 to 4247
-        
-        a difference of 117085
-        
-        """
-        
-        # Drop duplicates based on the "Black" column
-        deduplicated = deduplicated.drop_duplicates(subset=["Black"])
-        
-        
-        deduplicated = deduplicated.reset_index()
-        
-        
-        """
-        
-        This reduced the number of rows from 4247 to 1573
-        
-        a difference of 2674
-        
-        
-        """
 
-        return deduplicated
-    
-    def remove_unnecessary_columns(df):
-        
-        # Remove unnecessary columns
-        less_columns = deduplicated[
-            [
-                "Event",
-                "White",
-                "Black",
-                "Result",
-                "WhiteElo",
-                "BlackElo",
-                "WhiteRatingDiff",
-                "BlackRatingDiff",
-                "Opening",
-                "TimeControl",
-                "Moves"
-            ]
+def drop_duplicates(df):
+    """
+    Drop duplicate games keeping only the first appearance per White and per Black player.
+    """
+    df = df.drop_duplicates(subset=["White"])
+    df = df.drop_duplicates(subset=["Black"])
+    return df.reset_index(drop=True)
+
+
+def remove_unnecessary_columns(df):
+    return df[
+        [
+            "Event", "White", "Black", "Result",
+            "WhiteElo", "BlackElo",
+            "WhiteRatingDiff", "BlackRatingDiff",
+            "Opening", "TimeControl", "Moves"
         ]
-        
-        return less_columns
-    
-    
-    def filter_to_classical_games(df):
-        
-        classical_games = df.query("Event == 'Rated Classical game'")
-        
-        return classical_games
-    
-    
-    def remove_draws(df):
-        
-        no_draws = df.query("Result != '1/2-1/2'")
-        
-        return no_draws
-    
-    import pandas as pd
-    
-    def remove_high_difference_in_elo(df, threshold=300):
-        """
-        Remove rows where the difference in Elo ratings between players
-        is greater than the specified threshold.
-        
-        Parameters:
-        df (pd.DataFrame): Input DataFrame with WhiteElo and BlackElo columns
-        threshold (int): Maximum allowed difference in Elo ratings
-        
-        Returns:
-        pd.DataFrame: Filtered DataFrame
-        """
-        # Create a copy to avoid SettingWithCopyWarning
-        filtered_df = df.copy()
-        
-        # Convert Elo columns to numeric values
-        filtered_df["WhiteElo"] = pd.to_numeric(filtered_df["WhiteElo"], errors='coerce')
-        filtered_df["BlackElo"] = pd.to_numeric(filtered_df["BlackElo"], errors='coerce')
-        
-        # Drop rows with non-numeric Elo values
-        filtered_df = filtered_df.dropna(subset=["WhiteElo", "BlackElo"])
-        
-        # Calculate the absolute difference in Elo ratings
-        filtered_df['difference_in_elo'] = abs(filtered_df["WhiteElo"] - filtered_df["BlackElo"])
-        
-        # Filter out rows where the difference is greater than the threshold
-        filtered_df = filtered_df[filtered_df['difference_in_elo'] <= threshold]
-        
-        # Drop the temporary column
-        filtered_df = filtered_df.drop(columns=['difference_in_elo'])
-        
-        return filtered_df
-    
-    
-    def remove_new_comers(df):
-        
-        
-       no_new_comers = df.query("-50 <= WhiteRatingDiff <= 50")
-       
-       no_new_comers = no_new_comers.query("-50 <= BlackRatingDiff <= 50")
-       
-       return no_new_comers
-        
+    ]
 
 
-    
-    
-    
+def filter_to_classical_games(df):
+    return df.query("Event == 'Rated Classical game'")
+
+
+def remove_draws(df):
+    return df.query("Result != '1/2-1/2'")
+
+
+def remove_high_difference_in_elo(df, threshold=300):
+    """
+    Remove rows where the Elo difference exceeds the threshold.
+    """
+    df = df.copy()
+    df["WhiteElo"] = pd.to_numeric(df["WhiteElo"], errors="coerce")
+    df["BlackElo"] = pd.to_numeric(df["BlackElo"], errors="coerce")
+    df = df.dropna(subset=["WhiteElo", "BlackElo"])
+
+    df["elo_diff"] = abs(df["WhiteElo"] - df["BlackElo"])
+    df = df[df["elo_diff"] <= threshold]
+
+    return df.drop(columns=["elo_diff"])
+
+
+def remove_new_comers(df):
+    """
+    Keep only players whose rating changed by ±50 or less.
+    """
+    return df.query(
+        "(-50 <= WhiteRatingDiff <= 50) and (-50 <= BlackRatingDiff <= 50)"
+    )
+
+
+
+def clean_name(opening_name):
+    if ':' in opening_name:
+        main_opening, variation = opening_name.split(':', 1)
+        if 'Gambit' in variation:
+            return f"{main_opening}: {variation.strip()}"
+        return main_opening.strip()
+    return opening_name.strip()
+
+
+def clean_openings_column(df):
+    """
+    Apply the clean_name function to the 'Opening' column of the dataframe.
+    """
+    df['Opening'] = df['Opening'].apply(clean_name)
+    return df
+
+
+def run_cleaning_pipeline(elo_threshold=200):
+    df = load_raw_data()
+    df = drop_duplicates(df)
+    df = remove_unnecessary_columns(df)
+    df = filter_to_classical_games(df)
+    df = remove_draws(df)
+    df = remove_high_difference_in_elo(df, threshold=elo_threshold)
+    df = remove_new_comers(df)
+    df = clean_openings_column(df)  
+    return df
+
+
 if __name__ == "__main__":
+    cleaned_df = run_cleaning_pipeline()
+    print(f"✅ Final dataset shape: {cleaned_df.shape}")
+    print(cleaned_df.head())
     
-    raw_data = Cleaning.load_raw_data()
     
-    deduplicated = Cleaning.drop_duplicates(raw_data)
+    cleaned_df.to_csv("cleaned_data.csv")
 
-    less_columns = Cleaning.remove_unnecessary_columns(deduplicated)
+        
+
+
     
-    classical_games = Cleaning.filter_to_classical_games(less_columns)
     
-    no_draws = Cleaning.remove_draws(classical_games)
     
-    similar_elos = Cleaning.remove_high_difference_in_elo(no_draws, 200)
-    
-    no_new_comers = Cleaning.remove_new_comers(similar_elos)
+
     
     
     
