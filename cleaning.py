@@ -18,11 +18,17 @@ def drop_duplicates(df):
 
 
 def clean_name(opening_name):
+    
     if ':' in opening_name:
+        
         main_opening, variation = opening_name.split(':', 1)
+        
         if 'Gambit' in variation:
+            
             return f"{main_opening}: {variation.strip()}"
+        
         return main_opening.strip()
+    
     return opening_name.strip()
 
 
@@ -43,7 +49,7 @@ def run_cleaning_pipeline():
 
 if __name__ == "__main__":
     cleaned_df = run_cleaning_pipeline()
-    print(f"✅ Final dataset shape: {cleaned_df.shape}")
+    print(f"Final dataset shape: {cleaned_df.shape}")
     print(cleaned_df.head())
     
     
