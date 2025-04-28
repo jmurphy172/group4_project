@@ -5,6 +5,7 @@ pgn_file_path = r"C:\Users\James\OneDrive\Desktop\GitHub\group4_project\raw_data
 output_csv_path = "filtered_chess_games.csv"
 
 def is_valid_game(headers, elo_threshold=200):
+    
     try:
         # Filter: Event must be classical
         if headers.get("Event") != "Rated Classical game":
@@ -15,8 +16,11 @@ def is_valid_game(headers, elo_threshold=200):
             return False
 
         # Filter: Rating differences within bounds
+        
         white_elo = int(headers.get("WhiteElo", 0))
+        
         black_elo = int(headers.get("BlackElo", 0))
+        
         if abs(white_elo - black_elo) > elo_threshold:
             return False
 
@@ -33,12 +37,17 @@ def is_valid_game(headers, elo_threshold=200):
 
 # Open PGN and CSV files
 with open(pgn_file_path, "r", encoding="utf-8") as pgn_file, \
+    
      open(output_csv_path, "w", newline="", encoding="utf-8") as csvfile:
 
     fieldnames = ["Event", "White", "Black", "Result",
                   "WhiteElo", "BlackElo", "WhiteRatingDiff",
                   "BlackRatingDiff", "Opening", "TimeControl", "Moves"]
+    
+    
     writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+    
+    
     writer.writeheader()
 
     kept_count = 0  # To track how many games are kept
