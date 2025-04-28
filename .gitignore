@@ -165,3 +165,8 @@ cython_debug/
 #misc
 
 .pyc
+*.csv
+*.ods
+*.png
+raw_data/chess_games.csv
+raw_data/lichess_db_standard_rated_2017-04.pgn
