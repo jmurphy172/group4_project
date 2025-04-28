@@ -76,10 +76,13 @@ with open(pgn_file_path, "r", encoding="utf-8") as pgn_file, \
             kept_count += 1
 
             if kept_count % 1000 == 0:
-                print(f"✅ Saved {kept_count} games...")
+                
+                print(f"Saved {kept_count} games...")
 
         except Exception as e:
-            print(f"⚠️ Skipping game due to error: {e}")
+            
+            print(f"Skipping game due to error: {e}")
+            
             continue
 
-print(f"🎯 Done! Processed all games, kept {kept_count} valid ones.")
+print(f"Processed all games, kept {kept_count} valid ones.")
