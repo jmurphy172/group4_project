@@ -1,13 +1,9 @@
-import main.load_data as ld
+from main.load_data import load_raw_data
 
 import pandas as pd
 
-import pandas as pd
-import main.load_data as ld
 
 
-def load_raw_data():
-    return ld.load_raw_data()
 
 
 def drop_duplicates(df):

@@ -170,3 +170,5 @@ cython_debug/
 *.png
 raw_data/chess_games.csv
 raw_data/lichess_db_standard_rated_2017-04.pgn
+dummy_graphs.py
+test_graphs.py
