@@ -1,8 +1,8 @@
 from main.load_data import load_raw_data
 
+from main.utils import write_csv
+
 import pandas as pd
-
-
 
 
 
@@ -21,7 +21,10 @@ def clean_name(opening_name):
     
     if ':' in opening_name:
         
-        main_opening, variation = opening_name.split(':', 1)
+        main_opening, variation = opening_name.split(':', maxsplit=1)
+        
+        
+        
         
         if 'Gambit' in variation:
             
@@ -29,7 +32,23 @@ def clean_name(opening_name):
         
         return main_opening.strip()
     
+    
     return opening_name.strip()
+
+    
+    
+    
+def remove_numbered_games(opening_name):
+    
+    if "#" in opening_name:
+        
+        name, number = opening_name.split("#", maxsplit=1 )
+        
+        return name.strip()
+    
+    return opening_name
+    
+
 
 
 def clean_openings_column(df):
@@ -37,6 +56,9 @@ def clean_openings_column(df):
     Apply the clean_name function to the 'Opening' column of the dataframe.
     """
     df['Opening'] = df['Opening'].apply(clean_name)
+    
+    df['Opening'] = df['Opening'].apply(remove_numbered_games)
+    
     return df
 
 
@@ -48,12 +70,19 @@ def run_cleaning_pipeline():
 
 
 if __name__ == "__main__":
+    
+    raw_data = load_raw_data()
+    
+    write_csv(raw_data, "raw_data.csv")
+    
+    
+    
     cleaned_df = run_cleaning_pipeline()
     print(f"Final dataset shape: {cleaned_df.shape}")
     print(cleaned_df.head())
     
-    
-    cleaned_df.to_csv("cleaned_data.csv")
+
+    write_csv(cleaned_df, "cleaned_data.csv")
 
         
 
