@@ -227,6 +227,20 @@ opening_name_investigation_from_raw = raw_data[raw_data["Opening"].str.contains(
 
 opening_name_investigation_from_raw = get_unique_openings_with_counts(opening_name_investigation_from_raw)
 
+#write_csv()
+
+
+############
+
 
 opening_name_investigation_from_clean = cleaned_data[cleaned_data["Opening"].str.contains("russian", case=False, na=False) |
                                       cleaned_data["Opening"].str.contains("petrov", case=False, na=False)]
+
+
+
+opening_name_investigation_from_clean = get_unique_openings_with_counts(opening_name_investigation_from_clean)
+
+#write_csv
+
+
+

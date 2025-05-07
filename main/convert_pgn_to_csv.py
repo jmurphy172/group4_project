@@ -37,7 +37,6 @@ def is_valid_game(headers, elo_threshold=200):
 
 # Open PGN and CSV files
 with open(pgn_file_path, "r", encoding="utf-8") as pgn_file, \
-    
      open(output_csv_path, "w", newline="", encoding="utf-8") as csvfile:
 
     fieldnames = ["Event", "White", "Black", "Result",
