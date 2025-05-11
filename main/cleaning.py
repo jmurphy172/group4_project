@@ -62,10 +62,20 @@ def clean_openings_column(df):
     return df
 
 
+
+def make_all_col_names_lowercase(df):
+    
+    df.columns = df.columns.str.lower()
+    
+    return df
+
+
+
 def run_cleaning_pipeline():
     df = load_raw_data()
     df = drop_duplicates(df)
-    df = clean_openings_column(df)  
+    df = clean_openings_column(df) 
+    df = make_all_col_names_lowercase(df)
     return df
 
 
