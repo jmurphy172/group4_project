@@ -9,7 +9,7 @@ def load_raw_data():
     
    root_dir = get_root_path()
    
-   raw_data = pd.read_csv(root_dir / "main/filtered_chess_games.csv")
+   raw_data = pd.read_csv(root_dir / "raw_data/filtered_chess_games.csv")
    
    return raw_data
 
