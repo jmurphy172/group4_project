@@ -9,6 +9,12 @@ from main.utils import write_csv, read_csv
 from main.load_data import load_raw_data
 
 
+
+show_graphs = False
+
+analysis = False
+
+
 #%% Definitions
 
 
@@ -117,22 +123,24 @@ write_csv(unique_openings_with_counts_from_cleaned_df, "unique_openings_with_cou
 
 #%% plot all openings
 
-
-# Create the horizontal bar plot
-plt.figure(figsize=(10, 8))
-plt.barh(unique_openings_with_counts_from_cleaned_df['Opening'], unique_openings_with_counts_from_cleaned_df['percentage'], color='skyblue')
-
-plt.xlabel('Percentage of Games (%)')
-plt.title('Chess Openings by Percentage of Games')
-plt.grid(axis='x', linestyle='--', alpha=0.7)
-
-
-plt.tight_layout()
-
-plt.show()
-
-
-
+if show_graphs:
+    
+    
+    # Create the horizontal bar plot
+    plt.figure(figsize=(10, 8))
+    plt.barh(unique_openings_with_counts_from_cleaned_df['Opening'], unique_openings_with_counts_from_cleaned_df['percentage'], color='skyblue')
+    
+    plt.xlabel('Percentage of Games (%)')
+    plt.title('Chess Openings by Percentage of Games')
+    plt.grid(axis='x', linestyle='--', alpha=0.7)
+    
+    
+    plt.tight_layout()
+    
+    plt.show()
+    
+    
+    
 
 #%%
 
@@ -189,10 +197,17 @@ def plot_top_n_openings_improved(n):
     plt.tight_layout()
     
     plt.show()
+    
+    
+    
+    
 # Call the improved function
-plot_top_n_openings_improved(70)
 
-plot_top_n_openings_improved(30)
+if show_graphs:
+    
+    plot_top_n_openings_improved(70)
+    
+    plot_top_n_openings_improved(30)
 
 
 
@@ -208,8 +223,8 @@ write_csv(top_30_openings, "top_30_openings.csv")
 top_30_openings_coverage_percentage = top_30_openings.percentage.sum().round(2)
 
 
-
-print(f"\n\nThe top thirty openings account for {top_30_openings_coverage_percentage}% of the total games\n\n")
+if analysis:
+    print(f"\n\nThe top thirty openings account for {top_30_openings_coverage_percentage}% of the total games\n\n")
 
 
 
@@ -227,7 +242,7 @@ opening_name_investigation_from_raw = raw_data[raw_data["Opening"].str.contains(
 
 opening_name_investigation_from_raw = get_unique_openings_with_counts(opening_name_investigation_from_raw)
 
-#write_csv()
+write_csv(opening_name_investigation_from_raw, "opening_name_investigation_from_raw.csv" )
 
 
 ############
@@ -240,7 +255,7 @@ opening_name_investigation_from_clean = cleaned_df[cleaned_df["Opening"].str.con
 
 opening_name_investigation_from_clean = get_unique_openings_with_counts(opening_name_investigation_from_clean)
 
-#write_csv
+write_csv(opening_name_investigation_from_clean, "opening_name_investigation_from_clean.csv" )
 
 
 
