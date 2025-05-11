@@ -84,16 +84,3 @@ if __name__ == "__main__":
 
     write_csv(cleaned_df, "cleaned_data.csv")
 
-        
-
-
-    
-    
-    
-
-    
-    
-    
-    
-    
-
