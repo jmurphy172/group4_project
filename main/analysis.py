@@ -4,7 +4,7 @@ import matplotlib.pyplot as plt
 
 
 
-from main.utils import write_csv
+from main.utils import write_csv, read_csv
 
 from main.load_data import load_raw_data
 
@@ -53,25 +53,25 @@ write_csv(unique_openings_from_raw_data, "unique_openings_from_raw_data.csv")
 
 
 #%% Load cleaned data
-cleaned_data = pd.read_csv("C:/Users/James/OneDrive/Desktop/GitHub/group4_project/cleaned_data.csv")
+cleaned_df = read_csv("cleaned_df.csv")
 
 #%% find uncommon openings
 
 
 # Step 1: Get all unique openings with their counts
-unique_openings_with_counts_from_cleaned_data = get_unique_openings_with_counts(cleaned_data)
+unique_openings_with_counts_from_cleaned_df = get_unique_openings_with_counts(cleaned_df)
     
   
 #%% let us define cleaned data that is going through various transformations as the as the following:
     
     
-dft = cleaned_data.copy()
+dft = cleaned_df.copy()
 
 #%%
 
 
 # Step 2: Merge the DataFrames on the 'Opening' column
-dft = dft.merge(unique_openings_with_counts_from_cleaned_data, on='Opening', how='left').sort_values("count", ascending=False)
+dft = dft.merge(unique_openings_with_counts_from_cleaned_df, on='Opening', how='left').sort_values("count", ascending=False)
 
 #%%
 
@@ -87,21 +87,21 @@ dft.rename(columns = {'count':'opening_count'})
 
 
 # Calculate the total count
-total_count = unique_openings_with_counts_from_cleaned_data['count'].sum()
+total_count = unique_openings_with_counts_from_cleaned_df['count'].sum()
 
 # Create a new column 'percentage'
-unique_openings_with_counts_from_cleaned_data['percentage'] = (unique_openings_with_counts_from_cleaned_data['count'] / total_count) * 100
+unique_openings_with_counts_from_cleaned_df['percentage'] = (unique_openings_with_counts_from_cleaned_df['count'] / total_count) * 100
 
 # Round the percentage to 2 decimal places
-unique_openings_with_counts_from_cleaned_data['percentage'] = unique_openings_with_counts_from_cleaned_data['percentage'].round(2)
+unique_openings_with_counts_from_cleaned_df['percentage'] = unique_openings_with_counts_from_cleaned_df['percentage'].round(2)
 
-unique_openings_with_counts_from_cleaned_data = unique_openings_with_counts_from_cleaned_data.sort_values(by='percentage', ascending=False)
+unique_openings_with_counts_from_cleaned_df = unique_openings_with_counts_from_cleaned_df.sort_values(by='percentage', ascending=False)
 
 
 
 #%% Top openings
 
-top_70_openings = get_top_n_openings(unique_openings_with_counts_from_cleaned_data, 70)
+top_70_openings = get_top_n_openings(unique_openings_with_counts_from_cleaned_df, 70)
 
 
 top_70_openings.to_csv("top_70_openings.csv")
@@ -110,17 +110,17 @@ top_70_openings.to_csv("top_70_openings.csv")
 
 #%% sort for graphing purposes
 
-unique_openings_with_counts_from_cleaned_data = unique_openings_with_counts_from_cleaned_data.sort_values(by='percentage', ascending=True)
+unique_openings_with_counts_from_cleaned_df = unique_openings_with_counts_from_cleaned_df.sort_values(by='percentage', ascending=True)
 
 
-write_csv(unique_openings_with_counts_from_cleaned_data, "unique_openings_with_counts_from_cleaned_data.csv")
+write_csv(unique_openings_with_counts_from_cleaned_df, "unique_openings_with_counts_from_cleaned_df.csv")
 
 #%% plot all openings
 
 
 # Create the horizontal bar plot
 plt.figure(figsize=(10, 8))
-plt.barh(unique_openings_with_counts_from_cleaned_data['Opening'], unique_openings_with_counts_from_cleaned_data['percentage'], color='skyblue')
+plt.barh(unique_openings_with_counts_from_cleaned_df['Opening'], unique_openings_with_counts_from_cleaned_df['percentage'], color='skyblue')
 
 plt.xlabel('Percentage of Games (%)')
 plt.title('Chess Openings by Percentage of Games')
@@ -141,7 +141,7 @@ def plot_top_n_openings_improved(n):
     
     from matplotlib.ticker import MaxNLocator, AutoMinorLocator
     
-    top_n_openings = get_top_n_openings(unique_openings_with_counts_from_cleaned_data, n)
+    top_n_openings = get_top_n_openings(unique_openings_with_counts_from_cleaned_df, n)
     
     # Sort in descending order for better visualization
     top_n_openings = top_n_openings.sort_values(by='percentage', ascending=True)
@@ -199,7 +199,7 @@ plot_top_n_openings_improved(30)
 
 #%% Top openings
 
-top_30_openings = get_top_n_openings(unique_openings_with_counts_from_cleaned_data, n = 30)
+top_30_openings = get_top_n_openings(unique_openings_with_counts_from_cleaned_df, n = 30)
 
 
 write_csv(top_30_openings, "top_30_openings.csv")
@@ -233,8 +233,8 @@ opening_name_investigation_from_raw = get_unique_openings_with_counts(opening_na
 ############
 
 
-opening_name_investigation_from_clean = cleaned_data[cleaned_data["Opening"].str.contains("russian", case=False, na=False) |
-                                      cleaned_data["Opening"].str.contains("petrov", case=False, na=False)]
+opening_name_investigation_from_clean = cleaned_df[cleaned_df["Opening"].str.contains("russian", case=False, na=False) |
+                                      cleaned_df["Opening"].str.contains("petrov", case=False, na=False)]
 
 
 

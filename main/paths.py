@@ -11,7 +11,7 @@ def get_data_path():
     
     root = get_root_path()
     
-    data_path = root / "main" / "data"
+    data_path = root / "data"
     
     return data_path
   

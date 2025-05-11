@@ -73,14 +73,15 @@ if __name__ == "__main__":
     
     raw_data = load_raw_data()
     
-    write_csv(raw_data, "raw_data.csv")
-    
     
     
     cleaned_df = run_cleaning_pipeline()
+    
+    
+    
     print(f"Final dataset shape: {cleaned_df.shape}")
     print(cleaned_df.head())
     
 
-    write_csv(cleaned_df, "cleaned_data.csv")
+    write_csv(cleaned_df, "cleaned_df.csv")
 
