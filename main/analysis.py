@@ -20,7 +20,7 @@ _show_graphs = False
 
 _analysis = False
 
-_debug = True
+_debug = False
 
 
 #%% Definitions
@@ -63,10 +63,10 @@ def get_unique_openings_with_counts(df):
 RAW_DATA = load_raw_data()
 
 
-unique_openings_from_RAW_DATA = get_unique_openings_with_counts(RAW_DATA)
+unique_openings_from_raw_data = get_unique_openings_with_counts(RAW_DATA)
 
 
-write_csv(unique_openings_from_RAW_DATA, "unique_openings_from_RAW_DATA.csv")
+write_csv(unique_openings_from_raw_data, "unique_openings_from_raw_data.csv")
 
 
 
@@ -79,7 +79,7 @@ _cleaned_df = read_csv("cleaned_df.csv")
 
 
 # Step 1: Get all unique openings with their counts
-unique_openings_with_counts_from__cleaned_df = get_unique_openings_with_counts(_cleaned_df)
+unique_openings_with_counts_from_cleaned_df = get_unique_openings_with_counts(_cleaned_df)
     
   
 #%% let us define cleaned data that is going through various transformations as the as the following:
@@ -91,7 +91,7 @@ dft = _cleaned_df.copy()
 
 
 # Step 2: Merge the DataFrames on the 'opening' column
-dft = dft.merge(unique_openings_with_counts_from__cleaned_df, on='opening', how='left').sort_values("count", ascending=False)
+dft = dft.merge(unique_openings_with_counts_from_cleaned_df, on='opening', how='left').sort_values("count", ascending=False)
 
 #%%
 
@@ -107,21 +107,29 @@ dft.rename(columns = {'count':'opening_count'})
 
 
 # Calculate the total count
-total_count = unique_openings_with_counts_from__cleaned_df['count'].sum()
+total_count = unique_openings_with_counts_from_cleaned_df['count'].sum()
 
 # Create a new column 'percentage'
-unique_openings_with_counts_from__cleaned_df['percentage'] = (unique_openings_with_counts_from__cleaned_df['count'] / total_count) * 100
+unique_openings_with_counts_from_cleaned_df['percentage'] = (unique_openings_with_counts_from_cleaned_df['count'] / total_count) * 100
+
+
+# verify that the percentage column sums to one
+
+percentage_verification = sum(unique_openings_with_counts_from_cleaned_df.percentage)
+
+
+
 
 # Round the percentage to 2 decimal places
-unique_openings_with_counts_from__cleaned_df['percentage'] = unique_openings_with_counts_from__cleaned_df['percentage'].round(2)
+unique_openings_with_counts_from_cleaned_df['percentage'] = unique_openings_with_counts_from_cleaned_df['percentage'].round(2)
 
-unique_openings_with_counts_from__cleaned_df = unique_openings_with_counts_from__cleaned_df.sort_values(by='percentage', ascending=False)
+unique_openings_with_counts_from_cleaned_df = unique_openings_with_counts_from_cleaned_df.sort_values(by='percentage', ascending=False)
 
 
 
 #%% Top openings
 
-top_70_openings = get_top_n_openings(unique_openings_with_counts_from__cleaned_df, 70)
+top_70_openings = get_top_n_openings(unique_openings_with_counts_from_cleaned_df, 70)
 
 
 top_70_openings.to_csv("top_70_openings.csv")
@@ -130,10 +138,10 @@ top_70_openings.to_csv("top_70_openings.csv")
 
 #%% sort for graphing purposes
 
-unique_openings_with_counts_from__cleaned_df = unique_openings_with_counts_from__cleaned_df.sort_values(by='percentage', ascending=True)
+unique_openings_with_counts_from_cleaned_df = unique_openings_with_counts_from_cleaned_df.sort_values(by='percentage', ascending=True)
 
 
-write_csv(unique_openings_with_counts_from__cleaned_df, "unique_openings_with_counts_from__cleaned_df.csv")
+write_csv(unique_openings_with_counts_from_cleaned_df, "unique_openings_with_counts_from_cleaned_df.csv")
 
 #%% plot all openings
 
@@ -142,7 +150,7 @@ if _show_graphs:
     
     # Create the horizontal bar plot
     plt.figure(figsize=(10, 8))
-    plt.barh(unique_openings_with_counts_from__cleaned_df['opening'], unique_openings_with_counts_from__cleaned_df['percentage'], color='skyblue')
+    plt.barh(unique_openings_with_counts_from_cleaned_df['opening'], unique_openings_with_counts_from_cleaned_df['percentage'], color='skyblue')
     
     plt.xlabel('Percentage of Games (%)')
     plt.title('Chess openings by Percentage of Games')
@@ -163,7 +171,7 @@ def plot_top_n_openings_improved(n):
     
     from matplotlib.ticker import MaxNLocator, AutoMinorLocator
     
-    top_n_openings = get_top_n_openings(unique_openings_with_counts_from__cleaned_df, n)
+    top_n_openings = get_top_n_openings(unique_openings_with_counts_from_cleaned_df, n)
     
     # Sort in descending order for better visualization
     top_n_openings = top_n_openings.sort_values(by='percentage', ascending=True)
@@ -228,7 +236,7 @@ if _show_graphs:
 
 #%% Top openings
 
-top_30_openings = get_top_n_openings(unique_openings_with_counts_from__cleaned_df, n = 30)
+top_30_openings = get_top_n_openings(unique_openings_with_counts_from_cleaned_df, n = 30)
 
 
 write_csv(top_30_openings, "top_30_openings.csv")
@@ -245,7 +253,34 @@ if _analysis:
 
 
 
-#%% All games including russian or petrov
+#%%  Begining an investigation of strangeness in opening names
+
+# ??? complete thought.
+"""
+I noticed that the Petrov defence fell outside the top thirty openings.
+
+I thought that this was unusual given it is quite a popular opening at the highest levels of chess.
+
+So I started by looking through all of the unique openings that we had in our data and I noticed that the
+
+Russian Game, the Petrov's Defense, and simply Petrov all appeared. These are all the same opening [please complete]
+
+
+"""
+
+
+opening_name_investigation_from_clean = _cleaned_df[_cleaned_df["opening"].str.contains("russian", case=False, na=False) |
+                                      _cleaned_df["opening"].str.contains("petrov", case=False, na=False)]
+
+
+
+opening_name_investigation_from_clean = get_unique_openings_with_counts(opening_name_investigation_from_clean)
+
+
+
+############
+
+
 
 
 opening_name_investigation_from_raw = RAW_DATA[RAW_DATA["opening"].str.contains("russian", case=False, na=False) |
@@ -256,20 +291,17 @@ opening_name_investigation_from_raw = RAW_DATA[RAW_DATA["opening"].str.contains(
 
 opening_name_investigation_from_raw = get_unique_openings_with_counts(opening_name_investigation_from_raw)
 
-write_csv(opening_name_investigation_from_raw, "opening_name_investigation_from_raw.csv" )
-
-
-############
-
-
-opening_name_investigation_from_clean = _cleaned_df[_cleaned_df["opening"].str.contains("russian", case=False, na=False) |
-                                      _cleaned_df["opening"].str.contains("petrov", case=False, na=False)]
+# write_csv(opening_name_investigation_from_raw, "opening_name_investigation_from_raw.csv" )
 
 
 
-opening_name_investigation_from_clean = get_unique_openings_with_counts(opening_name_investigation_from_clean)
 
-write_csv(opening_name_investigation_from_clean, "opening_name_investigation_from_clean.csv" )
+
+
+
+
+
+# write_csv(opening_name_investigation_from_clean, "opening_name_investigation_from_clean.csv" )
 
 
 
@@ -424,7 +456,7 @@ responsibilities =[
         
         ('Owen Defense', 'black'),
         
-        ('Hungarian opening', 'white'), # ??? check
+        ('Hungarian opening', 'white'),
         
         ('Slav Defense', 'black'),
         
@@ -441,10 +473,63 @@ responsibilities = pd.DataFrame(responsibilities)
 responsibilities = responsibilities.rename(columns= { 
     
                                                      0: "opening",
+                                           
                                                      
                                                      1: "responsibility" 
                                                      
                                                      }
                                            )
+
+
+
+#%% add responsibilities to dft
+
+dft = pd.merge(dft, responsibilities, how = "left", on = "opening")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
