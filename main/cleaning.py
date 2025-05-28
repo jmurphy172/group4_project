@@ -6,6 +6,26 @@ import pandas as pd
 
 
 
+# =============================================================================
+#  Added in a little bit of cleaning when I found aliases in analysis phase
+# =============================================================================
+
+PETROV_ALIASES = {
+    "Russian Game": "Petrov",
+    "Petrov's Defense": "Petrov",
+}
+
+
+def standardize_petrov_openings(df):
+    """
+    Standardizes Petrov-related opening names using predefined aliases.
+    """
+    df['opening'] = df['opening'].replace(PETROV_ALIASES)
+    return df
+
+
+
+
 def drop_duplicates(df):
     """
     Drop duplicate games keeping only the first appearance per White and per Black player.
@@ -18,6 +38,42 @@ def drop_duplicates(df):
 
 
 def clean_name(opening_name):
+    
+    
+    """
+    
+    Strips whitespace, splits on the first “:”.
+    
+    If the variation part contains “Gambit”, 
+    
+    it returns “Main : Variation”;
+    
+    otherwise it drops the variation and returns only the main opening name.
+    
+    
+    
+    Some openings that might be considered distinctive are perhaps not properly segregated, e.g.
+
+
+		Russian Game: Paulsen Attack
+		Russian Game: Nimzowitsch Attack
+		Petrov: Modern Attack
+
+
+    A tag that ends in “Attack” can be anything from a full-blown repertoire choice (King’s Indian Attack)
+    to a minor sideline like the Nimzowitsch Attack versus the Petrov.
+    
+    
+    We did not have scope to measure each one’s frequency, we mapped them back to the parent opening.
+    
+    
+    Gambits stay separate because—even when rare—they reshape the game outright.
+
+    
+    
+    """
+    
+    
     
     if ':' in opening_name:
         
@@ -71,17 +127,64 @@ def make_all_col_names_lowercase(df):
 
 
 
+
+def calculate_rating_diff_for_nans(df):
+    
+    condition_white_nan = df["whiteratingdiff"].isna()
+    condition_black_nan = df["blackratingdiff"].isna()
+
+    df.loc[condition_white_nan, "whiteratingdiff"] = df["whiteelo"] - df["blackelo"]
+    df.loc[condition_black_nan, "blackratingdiff"] = df["blackelo"] - df["whiteelo"]
+
+    return df
+
+
+def remove_rating_diffs_greater_than_fifty_points(df):
+    """
+    Removes rows where either white or black rating difference exceeds 50 points.
+    """
+    condition = (df["whiteratingdiff"].abs() <= 50) & (df["blackratingdiff"].abs() <= 50)
+    return df[condition].reset_index(drop=True)
+
+
+
+
+
+
+
 def run_cleaning_pipeline():
+    
     df = load_raw_data()
     df = drop_duplicates(df)
     df = clean_openings_column(df) 
     df = make_all_col_names_lowercase(df)
+    
+    
+    
+    
+    # decided to drop these after
+    # we couldn't find a use for them in analysis
+    df = df.drop(columns= ["moves", "timecontrol"])
+    
+    
+    
+    
+    df = standardize_petrov_openings(df)
+    
+    
+    df = calculate_rating_diff_for_nans(df)
+    
+    df = remove_rating_diffs_greater_than_fifty_points(df)
+    
+    
+    
+    
+    
     return df
 
 
 if __name__ == "__main__":
     
-    raw_data = load_raw_data()
     
     
     
