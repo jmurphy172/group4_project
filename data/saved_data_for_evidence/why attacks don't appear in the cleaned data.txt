@@ -1,0 +1,17 @@
+
+Some openings that might be considered distinctive are perhaps not properly segregated, e.g.
+
+
+		Russian Game: Paulsen Attack
+		Russian Game: Nimzowitsch Attack
+		Petrov: Modern Attack
+
+
+A tag that ends in “Attack” can be anything from a full-blown repertoire choice (King’s Indian Attack)
+to a minor sideline like the Nimzowitsch Attack versus the Petrov.
+
+
+We did not have scope to measure each one’s frequency, we mapped them back to the parent opening.
+
+
+Gambits stay separate because—even when rare—they reshape the game outright.
