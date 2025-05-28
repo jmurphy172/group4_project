@@ -3,6 +3,13 @@ from scipy.stats import binomtest, chi2_contingency
 import matplotlib.pyplot as plt
 
 
+import seaborn as sns
+
+import statsmodels.api as sm
+
+from statsmodels.api import Logit, add_constant
+
+
 
 from main.utils import write_csv, read_csv
 
@@ -14,13 +21,18 @@ import pprint as pretty
 
 from main.cleaning import make_all_col_names_lowercase
 
+from main.utils import view_df as view
+
+
+import numpy as np
+
 
 
 _show_graphs = False
 
 _analysis = False
 
-_debug = False
+_debug = True
 
 
 #%% Definitions
@@ -58,6 +70,78 @@ def get_unique_openings_with_counts(df):
 
 
 
+#%% add_rarity_column
+
+def add_rarity_column(df, pct_threshold: float = 2.0):
+    
+    
+    """
+    Adds a 'rarity' column with values 'common' or 'uncommon',
+    based on whether the opening's percentage is above or below the threshold.
+
+    """
+    
+    df["rarity"] = df["percentage"].apply(
+        
+        lambda p: "uncommon" if p < pct_threshold else "common"
+    )
+    return df
+
+#%%
+
+def get_outcome(row):
+    
+    if row['responsibility'] == 'white':
+        
+        return 'won' if row['result'] == '1-0' else 'lost'
+    
+    
+    
+    elif row['responsibility'] == 'black':
+        
+        return 'won' if row['result'] == '0-1' else 'lost'
+    
+    
+
+    else:
+        raise ValueError(f"Unexpected responsibility value")
+
+
+
+#%%
+
+
+
+
+def rarity_outcome_by_cap(df, cap= None):
+    
+    """Return counts, win-rates and χ² p-value after filtering on abs(elo_difference)<=cap."""
+    
+    subset = df.loc[df['elo_difference'].abs() <= cap].copy()
+    
+    # outcome for the responsible*player ------------------------------
+    subset['won'] = (
+        (subset['responsibility'] == 'white') & (subset['result'] == '1-0')
+        | (subset['responsibility'] == 'black') & (subset['result'] == '0-1')
+    )
+
+    crosstab = pd.crosstab(subset['won'], subset['rarity'])
+    
+    # χ² test of independence (common vs uncommon, win vs loss)
+    chi2, p, _, _ = chi2_contingency(crosstab.values, correction=False)
+    
+    
+    summary = crosstab.rename(index={False: 'lost', True: 'won'})
+    summary['row_total'] = summary.sum(1)
+    summary.loc['col_total'] = summary.sum(0)
+    
+    win_rates = (summary.loc['won', ['common', 'uncommon']]
+                 / summary.loc['col_total', ['common', 'uncommon']])
+    
+    return summary, win_rates, p, cap
+
+
+
 #%% explore raw data
 
 RAW_DATA = load_raw_data()
@@ -91,7 +175,8 @@ dft = _cleaned_df.copy()
 
 
 # Step 2: Merge the DataFrames on the 'opening' column
-dft = dft.merge(unique_openings_with_counts_from_cleaned_df, on='opening', how='left').sort_values("count", ascending=False)
+
+dft = dft.merge(unique_openings_with_counts_from_cleaned_df, on='opening', how='left').sort_values("count", ascending=False).reset_index(drop = True)
 
 #%%
 
@@ -255,19 +340,29 @@ if _analysis:
 
 #%%  Begining an investigation of strangeness in opening names
 
-# ??? complete thought.
-"""
-I noticed that the Petrov defence fell outside the top thirty openings.
-
-I thought that this was unusual given it is quite a popular opening at the highest levels of chess.
-
-So I started by looking through all of the unique openings that we had in our data and I noticed that the
-
-Russian Game, the Petrov's Defense, and simply Petrov all appeared. These are all the same opening [please complete]
-
+#
 
 """
+I noticed that the Petrov Defense fell outside the top thirty openings.
 
+I thought this was unusual given that it is a well-established and frequently
+
+played opening at the highest levels of chess.
+
+To investigate, I began by reviewing the unique openings present in our dataset.
+
+I observed that several different names referred to the same opening:
+
+- 'Russian Game'
+- 'Petrov's Defense'
+- 'Petrov'
+
+These are all aliases for the same opening—the Petrov Defense—and should be treated as such for accurate statistical analysis. The inconsistency in naming likely led to a fragmentation of data, artificially lowering its apparent popularity.
+
+To address this, I added a standardization step to the data cleaning pipeline that maps these variants to a single consistent name: 'Petrov'.
+
+
+"""
 
 opening_name_investigation_from_clean = _cleaned_df[_cleaned_df["opening"].str.contains("russian", case=False, na=False) |
                                       _cleaned_df["opening"].str.contains("petrov", case=False, na=False)]
@@ -291,17 +386,18 @@ opening_name_investigation_from_raw = RAW_DATA[RAW_DATA["opening"].str.contains(
 
 opening_name_investigation_from_raw = get_unique_openings_with_counts(opening_name_investigation_from_raw)
 
-# write_csv(opening_name_investigation_from_raw, "opening_name_investigation_from_raw.csv" )
+
+
+#%% write to file in data folder
+
+# compare with files of the same name in saved data for evidence
+# to see that cleaning has been successful
 
 
 
+write_csv(opening_name_investigation_from_raw, "opening_name_investigation_from_raw.csv" )
 
-
-
-
-
-
-# write_csv(opening_name_investigation_from_clean, "opening_name_investigation_from_clean.csv" )
+write_csv(opening_name_investigation_from_clean, "opening_name_investigation_from_clean.csv" )
 
 
 
@@ -315,80 +411,15 @@ if _debug:
     responsibilities = [(opening, '') for opening in top_30_openings["opening"]]
     
     pretty.pprint(responsibilities)
-
-
-
-
-    responsibilities = [
-     
-     ('Sicilian Defense', ''),
-     
-     ("Queen's Pawn Game", ''),
-     
-     ("King's Pawn Game", ''),
-     
-     ('French Defense', ''),
-     
-     ('Philidor Defense', ''),
-     
-     ('Italian Game', ''),
-     
-     ('Scandinavian Defense', ''),
-     
-     ('Ruy Lopez', ''),
-     
-     ('English opening', ''),
-     
-     ("Bishop's opening", ''),
-     
-     ('Caro-Kann Defense', ''),
-     
-     ('Scotch Game', ''),
-     
-     ('Four Knights Game', ''),
-     
-     ("Van't Kruijs opening", ''),
-     
-     ("Queen's Gambit Declined", ''),
-     
-     ("Queen's Gambit Accepted", ''),
-     
-     ('Modern Defense', ''),
-     
-     ('Nimzowitsch Defense', ''),
-     
-     ('Indian Game', ''),
-     
-     ("Queen's Gambit Refused", ''),
-     
-     ('Horwitz Defense', ''),
-     
-     ('Pirc Defense', ''),
-     
-     ("King's Knight opening", ''),
-     
-     ('Center Game', ''),
-     
-     ('Vienna Game', ''),
-     
-     ('Owen Defense', ''),
-     
-     ('Hungarian opening', ''),
-     
-     ('Slav Defense', ''),
-     
-     ('Alekhine Defense', ''),
-     
-     ('Three Knights opening', '')
-     
-     
-     
-     ]
     
-    print("\n\n\n\n")
+    
+    print("\n\n\n")
+
+    
     
     
     # Apply the rule: if "Defense" is in the opening name, assign "black"; otherwise, assign nothing
+    
     responsibilities = [
         
         (opening, 'black' if 'Defense' in opening else '') for opening, responsibilty in responsibilities
@@ -420,9 +451,9 @@ responsibilities =[
         
         ('Ruy Lopez', 'white'),
         
-        ('English opening', 'white'),
+        ('English Opening', 'white'),
         
-        ("Bishop's opening", 'white'),
+        ("Bishop's Opening", 'white'),
         
         ('Caro-Kann Defense', 'black'),
         
@@ -430,11 +461,18 @@ responsibilities =[
         
         ('Four Knights Game', 'white'),
         
-        ("Van't Kruijs opening", 'white'),
+        ("Van't Kruijs Opening", 'white'),
         
         ("Queen's Gambit Declined", 'black'),
         
         ("Queen's Gambit Accepted", 'black'),
+        
+        
+        
+        ('Petrov', 'black'), # This entered the top thirty
+                             # after additional cleaning
+                             
+                             
         
         ('Modern Defense', 'black'),
         
@@ -448,7 +486,7 @@ responsibilities =[
         
         ('Pirc Defense', 'black'),
         
-        ("King's Knight opening", 'white'),
+        ("King's Knight Opening", 'white'),
         
         ('Center Game', 'white'),
         
@@ -456,13 +494,13 @@ responsibilities =[
         
         ('Owen Defense', 'black'),
         
-        ('Hungarian opening', 'white'),
+        ('Hungarian Opening', 'white'),
         
         ('Slav Defense', 'black'),
         
         ('Alekhine Defense', 'black'),
         
-        ('Three Knights opening', 'white'),
+        # ('Three Knights Opening', 'white'), This fell out of the top thirty
 
 ]
 
@@ -486,6 +524,130 @@ responsibilities = responsibilities.rename(columns= {
 
 dft = pd.merge(dft, responsibilities, how = "left", on = "opening")
 
+top_30_openings_for_merge = top_30_openings[["opening", "percentage"]]
+
+top_30_openings_for_merge.rename(columns =
+                                 
+                                 {"percentage": "%_of_all_openings_played"}
+                                 
+                                 
+                                 )
+
+dft = pd.merge(top_30_openings_for_merge, dft, how = "left", on = "opening")
+
+
+
+
+
+
+
+#%% conclusion of petrov alias name issue
+
+"""
+
+After we investigated the Petrov alias name issue
+
+and renamed the aliases to be uniform we found that the Petrov,
+
+which was previously outside the top thirty most played openings
+
+jumped up to 17th place on the most played. 
+
+
+And knocked the Three Kights Opening out of the list altogether. 
+
+
+"""
+
+
+#%% add in absolute elo difference
+
+# This is not greater than 200 points
+
+# made sure of this at the conversion stage
+
+# N.B. don't mix up with rating diff -- which is how much a rating
+#      changes after the conclusion of a game
+
+
+
+#%% Calculate and insert elo difference column
+
+elo_difference = (dft["blackelo"] - dft["whiteelo"]).abs()
+
+
+dft.insert(
+    
+    dft.columns.get_loc("blackelo") + 1,
+    
+    "elo_difference",
+    
+    elo_difference)
+
+
+del elo_difference
+
+#%% add in rarity column
+
+
+dft = add_rarity_column(dft)  # default threshold is 2%
+
+
+dft['outcome_for_responsible_player'] = np.where(
+    (dft['responsibility'] == 'white') & (dft['result'] == '1-0') |
+    (dft['responsibility'] == 'black') & (dft['result'] == '0-1'),
+    'won',
+    'lost')
+
+
+#%% checking
+
+dft['outcome_for_responsible_player_2'] = dft.apply(get_outcome, axis=1)
+
+
+if _debug:
+    
+    print ("\n\n")
+    
+    print ("The columns are equal:")
+    
+    print(
+        
+        dft['outcome_for_responsible_player']
+        
+        .equals(dft['outcome_for_responsible_player_2'])
+        
+        )
+    
+    
+    
+dft = dft.drop(columns = ['outcome_for_responsible_player_2'])
+
+
+#%% add in cross table
+
+
+outcome_count_table = pd.crosstab(
+    dft['outcome_for_responsible_player'],
+    dft['rarity'],
+    margins = True,
+    margins_name = "total").reset_index()
+
+
+#%%
+
+summary100, win_rates100, p100, cap = rarity_outcome_by_cap(dft, cap =50)
+
+print("\n")
+print("cap = " + str(cap) + "\n")
+print(summary100)
+print("\nWin-rates  |  common: {:.2%}   uncommon: {:.2%}".format(*win_rates100))
+print("χ² p-value:", p100)
+
+
+
+
+#%%
 
 
 
@@ -494,42 +656,49 @@ dft = pd.merge(dft, responsibilities, how = "left", on = "opening")
 
 
 
+#%% Data Preparation
+# Copy the original DataFrame
+df = dft.copy()
 
+# Convert outcome to binary (1 = won, 0 = lost)
+df['won'] = (df['outcome_for_responsible_player'] == 'won').astype(int)
 
+# Convert 'rarity' to binary (0 = common, 1 = uncommon)
+df['rarity_binary'] = (df['rarity'] == 'uncommon').astype(int)
 
+# Define predictors and response
+X = add_constant(df[['rarity_binary', 'elo_difference']])
+y = df['won']
 
+#%% Fit Logistic Regression Model
+model = Logit(y, X).fit()
+print(model.summary())
 
+#%% Plot 1: Win Rate by Opening Rarity
+plt.figure(figsize=(8, 5))
+sns.stripplot(x='rarity', y='won', data=df, jitter=True, alpha=0.3)
+sns.pointplot(x='rarity', y='won', data=df, estimator=np.mean, color='red', markers='o')
+plt.title("Win Rate by Opening Rarity")
+plt.ylabel("Win (1) / Loss (0)")
+plt.xlabel("Opening Rarity")
+plt.show()
 
+#%% Plot 2: Predicted Win Probability by Elo Difference and Rarity
+# Predict probabilities using the model
+df['pred_prob'] = model.predict(X)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# Scatter plot of predicted probabilities
+plt.figure(figsize=(8, 5))
+sns.scatterplot(
+    x='elo_difference',
+    y='pred_prob',
+    hue='rarity_binary',
+    data=df.sample(1000),  # downsample for clarity
+    alpha=0.4
+)
+plt.title("Predicted Win Probability by Elo Difference and Rarity")
+plt.ylabel("Predicted Win Probability")
+plt.xlabel("Elo Difference")
+plt.legend(title='Uncommon Opening?')
+plt.show()
 
