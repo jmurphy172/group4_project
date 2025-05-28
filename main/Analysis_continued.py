@@ -5,34 +5,59 @@ from main.analysis import _cleaned_df
 from main.analysis import write_csv
 import numpy as np
 
-#responsibility look up table (vlookup)
+from main.paths import get_data_path
+
+#%% responsibility look up table (vlookup)
+
+
 responsibility_lookup = responsibilities.set_index('opening')['responsibility'].to_dict()
 
-_cleaned_df_resp = _cleaned_df.copy()
-_cleaned_df_resp['responsibility'] = _cleaned_df_resp['opening'].map(responsibility_lookup)
 
-#print(_cleaned_df_resp.head())
+#%% Add responsibility into 
 
-#dropping columns where responsibility is nan
-_cleaned_df_resp_wo_nan = _cleaned_df_resp.dropna(subset=['responsibility'])
+cleaned_df_resp = _cleaned_df.copy()
 
-rarity_df = rare_openings = pd.read_csv('project_files/data/top_30_openings_rarity_incl.csv')
+cleaned_df_resp['responsibility'] = cleaned_df_resp['opening'].map(responsibility_lookup)
+
+#%% 
+
+# print(cleaned_df_resp.head())
+
+#%% dropping columns where responsibility is nan
+cleaned_df_resp_wo_nan = cleaned_df_resp.dropna(subset=['responsibility'])
+
+
+
+
+#%%
+
+# set data path
+
+data_path =  get_data_path()
+
+
+rarity_df = rare_openings = pd.read_csv(data_path / "top_30_openings_rarity_incl.csv")
+
+#%%
+
+
+
 
 rarity_lookup = rarity_df.set_index('opening')['rarity'].to_dict()
-_cleaned_df_resp_wo_nan['rarity'] = _cleaned_df_resp['opening'].map(rarity_lookup)
+cleaned_df_resp_wo_nan['rarity'] = cleaned_df_resp['opening'].map(rarity_lookup)
 
 #game outcome
-_cleaned_df_resp_wo_nan['outcome'] = np.where(
-    (_cleaned_df_resp_wo_nan['responsibility'] == 'white') & (_cleaned_df_resp_wo_nan['result'] == '1-0') |
-    (_cleaned_df_resp_wo_nan['responsibility'] == 'black') & (_cleaned_df_resp_wo_nan['result'] == '0-1'),
+cleaned_df_resp_wo_nan['outcome'] = np.where(
+    (cleaned_df_resp_wo_nan['responsibility'] == 'white') & (cleaned_df_resp_wo_nan['result'] == '1-0') |
+    (cleaned_df_resp_wo_nan['responsibility'] == 'black') & (cleaned_df_resp_wo_nan['result'] == '0-1'),
     'won',
     'lost')
 
-write_csv(_cleaned_df_resp_wo_nan, "cleaned_df_updated.csv" )
+write_csv(cleaned_df_resp_wo_nan, "cleaned_df_updated.csv" )
 
 outcome_count_table = pd.crosstab(
-    _cleaned_df_resp_wo_nan['outcome'],
-    _cleaned_df_resp_wo_nan['rarity'],
+    cleaned_df_resp_wo_nan['outcome'],
+    cleaned_df_resp_wo_nan['rarity'],
     margins = True,
     margins_name = "total")
 
@@ -53,11 +78,11 @@ else:
 
 
 #Logistic regression
-import scikit-learn as sklearn
+#import scikit-learn as sklearn
 #from sklearn import linear_model
 
-#X_rarity = numpy.array(_cleaned_df_resp_wo_nan['rarity'])
-#Y_outcome = numpy.array(_cleaned_df_resp_wo_nan['outcome'])
+#X_rarity = numpy.array(cleaned_df_resp_wo_nan['rarity'])
+#Y_outcome = numpy.array(cleaned_df_resp_wo_nan['outcome'])
 
 #logr = linear_model.LogisticRegression()
 #logr.fit(X_rarity,Y_outcome)
