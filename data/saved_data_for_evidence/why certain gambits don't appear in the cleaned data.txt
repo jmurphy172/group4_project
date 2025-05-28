@@ -1,0 +1,17 @@
+Russian Game: Moody Gambit
+Russian Game: Modern Attack, Tal Gambit
+
+
+
+Why do the above Gambits not appear in the cleaned data?
+
+	drop_duplicates() first removes every game after the first time a “White” player appears, then removes every game after the first time a “Black” player appears.
+
+	In effect we keep at most one game per player, total.
+
+	If the only occurrence of the Tal Gambit involves a player who had an earlier game in the file, that row is discarded and never reaches the cleaning stage.
+
+
+
+
+
