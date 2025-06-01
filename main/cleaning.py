@@ -35,7 +35,13 @@ def drop_duplicates(df):
     return df.reset_index(drop=True)
 
 
-
+def beginners_only(df):
+    """
+    Remove any rows where the elo of either player is lower than 1,000 or above 1,500
+    """
+    
+    df = df[~((df['whiteelo'].between(1000, 1500)) | (df['blackelo'].between(1000, 1500)))]
+    return df
 
 def clean_name(opening_name):
     
@@ -158,6 +164,7 @@ def run_cleaning_pipeline():
     df = drop_duplicates(df)
     df = clean_openings_column(df) 
     df = make_all_col_names_lowercase(df)
+    df = beginners_only(df)
     
     
     
