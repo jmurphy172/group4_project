@@ -147,6 +147,29 @@ def remove_rating_diffs_greater_than_fifty_points(df):
     return df[condition].reset_index(drop=True)
 
 
+def beginners_only(df):
+    
+    """
+    This function removes players rated below 1000 and players rated above 2000
+    
+    or keeps players where the following condition is true.
+    
+    1000 < elo < 2000 (inclusive)  
+    
+    """
+    
+    df = df[df["whiteelo"] > 999]
+    
+    df = df[df["whiteelo"] < 2001]
+    
+    df = df[df["blackelo"] > 999]
+    
+    df = df[df["blackelo"] < 2001]
+    
+    
+    return df
+
+
 
 
 
@@ -158,6 +181,7 @@ def run_cleaning_pipeline():
     df = drop_duplicates(df)
     df = clean_openings_column(df) 
     df = make_all_col_names_lowercase(df)
+    df = beginners_only(df)
     
     
     
