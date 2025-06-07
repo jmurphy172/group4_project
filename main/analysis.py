@@ -30,9 +30,9 @@ import numpy as np
 
 _show_graphs = False
 
-_analysis = False
+_analysis = True
 
-_debug = True
+_debug = False
 
 
 #%% Definitions
@@ -233,7 +233,7 @@ if _show_graphs:
     
     # Create the horizontal bar plot
     plt.figure(figsize=(10, 8))
-    plt.barh(unique_openings_with_counts_from_cleaned_dft['opening'], unique_openings_with_counts_from_cleaned_dft['percentage'], color='skyblue')
+    plt.barh(unique_openings_with_counts_from_cleaned_df['opening'], unique_openings_with_counts_from_cleaned_df['percentage'], color='skyblue')
     
     plt.xlabel('Percentage of Games (%)')
     plt.title('Chess openings by Percentage of Games')
@@ -250,11 +250,11 @@ if _show_graphs:
 #%%
 
 
-def plot_top_n_openings_improved(n):
+def plot_top_n_openings(n):
     
     from matplotlib.ticker import MaxNLocator, AutoMinorLocator
     
-    top_n_openings = get_top_n_openings(unique_openings_with_counts_from_cleaned_dft, n)
+    top_n_openings = get_top_n_openings(unique_openings_with_counts_from_cleaned_df, n)
     
     # Sort in descending order for better visualization
     top_n_openings = top_n_openings.sort_values(by='percentage', ascending=True)
@@ -310,9 +310,9 @@ def plot_top_n_openings_improved(n):
 
 if _show_graphs:
     
-    plot_top_n_openings_improved(70)
+    plot_top_n_openings(70)
     
-    plot_top_n_openings_improved(30)
+    plot_top_n_openings(30)
 
 
 
@@ -741,3 +741,16 @@ if USE_ELO:
     lr_p    = chi2.sf(lr_stat, dft=1)
     
     print(f"\nLR test for Elo term → χ² = {lr_stat:.3f} (dft = 1), p = {lr_p:.4f}")
+    
+    
+    
+#%% export key data frames to csv
+
+
+write_csv(dft, "transformed_data.csv")
+
+write_csv(outcome_count_table, "outcome_count_table.csv")
+
+write_csv(top_30_openings, "top_30_openings.csv")
+
+write_csv(win_rates, "win_rates.csv")
