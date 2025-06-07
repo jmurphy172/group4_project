@@ -49,14 +49,14 @@ def get_top_n_openings(unique_openings_with_counts, n):
     return top_openings
 
 #%%
-def get_unique_openings_with_counts(df):
+def get_unique_openings_with_counts(dft):
     
     
-    df = make_all_col_names_lowercase(df)
+    dft = make_all_col_names_lowercase(dft)
     
     unique_openings_with_counts =(
         
-        df['opening'].value_counts()
+        dft['opening'].value_counts()
         
                         .reset_index()
                         
@@ -72,7 +72,7 @@ def get_unique_openings_with_counts(df):
 
 #%% add_rarity_column
 
-def add_rarity_column(df, pct_threshold: float = 2.0):
+def add_rarity_column(dft, pct_threshold: float = 2.0):
     
     
     """
@@ -81,11 +81,11 @@ def add_rarity_column(df, pct_threshold: float = 2.0):
 
     """
     
-    df["rarity"] = df["percentage"].apply(
+    dft["rarity"] = dft["percentage"].apply(
         
         lambda p: "uncommon" if p < pct_threshold else "common"
     )
-    return df
+    return dft
 
 #%%
 
@@ -112,10 +112,10 @@ def get_outcome(row):
 
 
 
-def rarity_outcome_by_cap(df, cap=None):
+def rarity_outcome_by_cap(dft, cap=None):
     """Return counts, win-rates, χ² statistic, p-value, and cap after filtering on abs(elo_difference) <= cap."""
 
-    subset = df.loc[df['elo_difference'].abs() <= cap].copy()
+    subset = dft.loc[dft['elo_difference'].abs() <= cap].copy()
 
     # outcome for the responsible player ------------------------------
     subset['won'] = (
@@ -224,7 +224,7 @@ top_70_openings.to_csv("top_70_openings.csv")
 unique_openings_with_counts_from_cleaned_df = unique_openings_with_counts_from_cleaned_df.sort_values(by='percentage', ascending=True)
 
 
-write_csv(unique_openings_with_counts_from_cleaned_df, "unique_openings_with_counts_from_cleaned_df.csv")
+write_csv(unique_openings_with_counts_from_cleaned_df, "unique_openings_with_counts_from_cleaned_dft.csv")
 
 #%% plot all openings
 
@@ -233,7 +233,7 @@ if _show_graphs:
     
     # Create the horizontal bar plot
     plt.figure(figsize=(10, 8))
-    plt.barh(unique_openings_with_counts_from_cleaned_df['opening'], unique_openings_with_counts_from_cleaned_df['percentage'], color='skyblue')
+    plt.barh(unique_openings_with_counts_from_cleaned_dft['opening'], unique_openings_with_counts_from_cleaned_dft['percentage'], color='skyblue')
     
     plt.xlabel('Percentage of Games (%)')
     plt.title('Chess openings by Percentage of Games')
@@ -254,7 +254,7 @@ def plot_top_n_openings_improved(n):
     
     from matplotlib.ticker import MaxNLocator, AutoMinorLocator
     
-    top_n_openings = get_top_n_openings(unique_openings_with_counts_from_cleaned_df, n)
+    top_n_openings = get_top_n_openings(unique_openings_with_counts_from_cleaned_dft, n)
     
     # Sort in descending order for better visualization
     top_n_openings = top_n_openings.sort_values(by='percentage', ascending=True)
@@ -449,9 +449,11 @@ responsibilities =[
         
         ('Ruy Lopez', 'white'),
         
+        
         ('English Opening', 'white'),
         
         ("Bishop's Opening", 'white'),
+        
         
         ('Caro-Kann Defense', 'black'),
         
@@ -488,6 +490,9 @@ responsibilities =[
         
         ('Center Game', 'white'),
         
+        
+        
+        
         ('Vienna Game', 'white'),
         
         ('Owen Defense', 'black'),
@@ -496,10 +501,9 @@ responsibilities =[
         
         ('Slav Defense', 'black'),
         
-        ('Alekhine Defense', 'black'),
+        #('Alekhine Defense', 'black'),
         
-        # ('Three Knights Opening', 'white'), This fell out of the top thirty
-
+        ('Three Knights Opening', 'white'), 
 ]
 
 
@@ -552,7 +556,7 @@ which was previously outside the top thirty most played openings
 jumped up to 17th place on the most played. 
 
 
-And knocked the Three Kights Opening out of the list altogether. 
+And knocked the Alekhine Defense Opening out of the list altogether. 
 
 
 """
@@ -648,17 +652,17 @@ print("χ² p-value:", p)
 
 #%% Data Preparation
 # Copy the original DataFrame
-df = dft.copy()
+dft = dft.copy()
 
 # Convert outcome to binary (1 = won, 0 = lost)
-df['won'] = (df['outcome_for_responsible_player'] == 'won').astype(int)
+dft['won'] = (dft['outcome_for_responsible_player'] == 'won').astype(int)
 
 # Convert 'rarity' to binary (0 = common, 1 = uncommon)
-df['rarity_binary'] = (df['rarity'] == 'uncommon').astype(int)
+dft['rarity_binary'] = (dft['rarity'] == 'uncommon').astype(int)
 
 # Define predictors and response
-X = add_constant(df[['rarity_binary', 'elo_difference']])
-y = df['won']
+X = add_constant(dft[['rarity_binary', 'elo_difference']])
+y = dft['won']
 
 #%% Fit Logistic Regression Model
 
@@ -670,8 +674,8 @@ print(model.summary())
 
 #%% Plot 1: Win Rate by Opening Rarity
 plt.figure(figsize=(8, 5))
-sns.stripplot(x='rarity', y='won', data=df, jitter=True, alpha=0.3)
-sns.pointplot(x='rarity', y='won', data=df, estimator=np.mean, color='red', markers='o')
+sns.stripplot(x='rarity', y='won', data=dft, jitter=True, alpha=0.3)
+sns.pointplot(x='rarity', y='won', data=dft, estimator=np.mean, color='red', markers='o')
 plt.title("Win Rate by Opening Rarity")
 plt.ylabel("Win (1) / Loss (0)")
 plt.xlabel("Opening Rarity")
@@ -679,7 +683,7 @@ plt.show()
 
 #%% Plot 2: Predicted Win Probability by Elo Difference and Rarity
 # Predict probabilities using the model
-df['pred_prob'] = model.predict(X)
+dft['pred_prob'] = model.predict(X)
 
 # Scatter plot of predicted probabilities
 plt.figure(figsize=(8, 5))
@@ -687,7 +691,7 @@ sns.scatterplot(
     x='elo_difference',
     y='pred_prob',
     hue='rarity_binary',
-    data=df.sample(1000),  # downsample for clarity
+    data=dft.sample(1000),  # downsample for clarity
     alpha=0.4
 )
 plt.title("Predicted Win Probability by Elo Difference and Rarity")
@@ -708,9 +712,9 @@ plt.show()
 USE_ELO = False          # set to True if you want to include elo_difference
 
 #%% Data preparation ---------------------------------------------------------
-df = dft.copy()
-df['won']           = (df['outcome_for_responsible_player'] == 'won').astype(int)
-df['rarity_binary'] = (df['rarity'] == 'uncommon').astype(int)
+dft = dft.copy()
+dft['won']           = (dft['outcome_for_responsible_player'] == 'won').astype(int)
+dft['rarity_binary'] = (dft['rarity'] == 'uncommon').astype(int)
 
 # Choose predictors based on the flag
 predictors = ['rarity_binary']
@@ -718,8 +722,8 @@ if USE_ELO:
     predictors.append('elo_difference')
 
 # Design matrix
-X = add_constant(df[predictors])
-y = df['won']
+X = add_constant(dft[predictors])
+y = dft['won']
 
 #%% Fit logistic model -------------------------------------------------------
 model = Logit(y, X).fit()
@@ -729,11 +733,11 @@ print(model.summary())
 #%% (Optional) Likelihood-ratio test if Elo is available ---------------------
 if USE_ELO:
     # Fit the nested model without Elo for comparison
-    X_no_elo   = add_constant(df[['rarity_binary']])
+    X_no_elo   = add_constant(dft[['rarity_binary']])
     model_base = Logit(y, X_no_elo).fit(disp=0)   # suppress extra output
     
     from scipy.stats import chi2
     lr_stat = 2 * (model.llf - model_base.llf)
-    lr_p    = chi2.sf(lr_stat, df=1)
+    lr_p    = chi2.sf(lr_stat, dft=1)
     
-    print(f"\nLR test for Elo term → χ² = {lr_stat:.3f} (df = 1), p = {lr_p:.4f}")
+    print(f"\nLR test for Elo term → χ² = {lr_stat:.3f} (dft = 1), p = {lr_p:.4f}")
