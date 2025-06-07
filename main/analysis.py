@@ -112,33 +112,31 @@ def get_outcome(row):
 
 
 
+def rarity_outcome_by_cap(df, cap=None):
+    """Return counts, win-rates, χ² statistic, p-value, and cap after filtering on abs(elo_difference) <= cap."""
 
-def rarity_outcome_by_cap(df, cap= None):
-    
-    """Return counts, win-rates and χ² p-value after filtering on abs(elo_difference)<=cap."""
-    
     subset = df.loc[df['elo_difference'].abs() <= cap].copy()
-    
-    # outcome for the responsible*player ------------------------------
+
+    # outcome for the responsible player ------------------------------
     subset['won'] = (
         (subset['responsibility'] == 'white') & (subset['result'] == '1-0')
         | (subset['responsibility'] == 'black') & (subset['result'] == '0-1')
     )
 
     crosstab = pd.crosstab(subset['won'], subset['rarity'])
-    
+
     # χ² test of independence (common vs uncommon, win vs loss)
     chi2, p, _, _ = chi2_contingency(crosstab.values, correction=False)
-    
-    
+
     summary = crosstab.rename(index={False: 'lost', True: 'won'})
     summary['row_total'] = summary.sum(1)
     summary.loc['col_total'] = summary.sum(0)
-    
+
     win_rates = (summary.loc['won', ['common', 'uncommon']]
                  / summary.loc['col_total', ['common', 'uncommon']])
-    
-    return summary, win_rates, p, cap
+
+    return summary, win_rates, chi2, p, cap
+
 
 
 
@@ -636,22 +634,14 @@ outcome_count_table = pd.crosstab(
 
 #%%
 
-summary100, win_rates100, p100, cap = rarity_outcome_by_cap(dft, cap =50)
+summary, win_rates, chi2, p, cap = rarity_outcome_by_cap(dft, cap =200)
 
 print("\n")
 print("cap = " + str(cap) + "\n")
-print(summary100)
-print("\nWin-rates  |  common: {:.2%}   uncommon: {:.2%}".format(*win_rates100))
-print("χ² p-value:", p100)
-
-
-
-
-#%%
-
-
-
-
+print(summary)
+print("\nWin-rates  |  common: {:.2%}   uncommon: {:.2%}".format(*win_rates))
+print("χ² statistic: {:.4f}".format(chi2))
+print("χ² p-value:", p)
 
 
 
@@ -671,6 +661,10 @@ X = add_constant(df[['rarity_binary', 'elo_difference']])
 y = df['won']
 
 #%% Fit Logistic Regression Model
+
+# Logit(p) = log(p / (1 - p))
+
+
 model = Logit(y, X).fit()
 print(model.summary())
 
@@ -702,3 +696,44 @@ plt.xlabel("Elo Difference")
 plt.legend(title='Uncommon Opening?')
 plt.show()
 
+
+
+
+
+
+
+#experimental
+
+#%% Parameters ---------------------------------------------------------------
+USE_ELO = False          # set to True if you want to include elo_difference
+
+#%% Data preparation ---------------------------------------------------------
+df = dft.copy()
+df['won']           = (df['outcome_for_responsible_player'] == 'won').astype(int)
+df['rarity_binary'] = (df['rarity'] == 'uncommon').astype(int)
+
+# Choose predictors based on the flag
+predictors = ['rarity_binary']
+if USE_ELO:
+    predictors.append('elo_difference')
+
+# Design matrix
+X = add_constant(df[predictors])
+y = df['won']
+
+#%% Fit logistic model -------------------------------------------------------
+model = Logit(y, X).fit()
+
+print(model.summary())
+
+#%% (Optional) Likelihood-ratio test if Elo is available ---------------------
+if USE_ELO:
+    # Fit the nested model without Elo for comparison
+    X_no_elo   = add_constant(df[['rarity_binary']])
+    model_base = Logit(y, X_no_elo).fit(disp=0)   # suppress extra output
+    
+    from scipy.stats import chi2
+    lr_stat = 2 * (model.llf - model_base.llf)
+    lr_p    = chi2.sf(lr_stat, df=1)
+    
+    print(f"\nLR test for Elo term → χ² = {lr_stat:.3f} (df = 1), p = {lr_p:.4f}")
