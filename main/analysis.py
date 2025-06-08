@@ -28,11 +28,11 @@ import numpy as np
 
 
 
-_show_graphs = False
+_show_graphs = True
 
 _analysis = True
 
-_debug = False
+_debug = True
 
 
 #%% Definitions
@@ -81,7 +81,7 @@ def add_rarity_column(dft, pct_threshold: float = 2.0):
 
     """
     
-    dft["rarity"] = dft["percentage"].apply(
+    dft["rarity"] = dft["%_of_all_openings_played"].apply(
         
         lambda p: "uncommon" if p < pct_threshold else "common"
     )
@@ -181,7 +181,8 @@ dft = dft.merge(unique_openings_with_counts_from_cleaned_df, on='opening', how='
 
 # Step 3: rename column
 
-dft.rename(columns = {'count':'opening_count'})
+dft = dft.rename(columns = {'count':'opening_count'})
+
 
 
 
@@ -189,7 +190,7 @@ dft.rename(columns = {'count':'opening_count'})
 
 
 
-# Calculate the total count
+# Calculate the total opening_count
 total_count = unique_openings_with_counts_from_cleaned_df['count'].sum()
 
 # Create a new column 'percentage'
@@ -305,8 +306,7 @@ def plot_top_n_openings(n):
     
     
     
-    
-# Call the improved function
+
 
 if _show_graphs:
     
@@ -526,14 +526,15 @@ responsibilities = responsibilities.rename(columns= {
 
 dft = pd.merge(dft, responsibilities, how = "left", on = "opening")
 
+
+
 top_30_openings_for_merge = top_30_openings[["opening", "percentage"]]
 
-top_30_openings_for_merge.rename(columns =
-                                 
-                                 {"percentage": "%_of_all_openings_played"}
-                                 
-                                 
-                                 )
+
+top_30_openings_for_merge = top_30_openings_for_merge.rename(
+    columns={"percentage": "%_of_all_openings_played"}
+)
+
 
 dft = pd.merge(top_30_openings_for_merge, dft, how = "left", on = "opening")
 
