@@ -21,7 +21,7 @@ import pprint as pretty
 
 from main.cleaning import make_all_col_names_lowercase
 
-from main.utils import view_df as view
+
 
 
 import numpy as np
