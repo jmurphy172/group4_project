@@ -165,7 +165,7 @@ cython_debug/
 #misc
 
 .pyc
-#*.csv
+*.csv
 *.ods
 *.png
 raw_data/chess_games.csv
